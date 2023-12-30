@@ -5,9 +5,10 @@ var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 
 const { connectDabase } = require("./database/index");
+const mountApi = require("./routes/index");
 
 var indexRouter = require("./routes/index");
-var usersRouter = require("./routes/users");
+var usersRouter = require("./routes/registerApi");
 
 var app = express();
 
@@ -21,8 +22,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", indexRouter);
-app.use("/users", usersRouter);
+// 连接数据库
+connectDabase();
+
+// 挂载路由
+mountApi(app);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -39,8 +43,5 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render("error");
 });
-
-// 连接数据库
-connectDabase();
 
 module.exports = app;

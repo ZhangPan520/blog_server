@@ -1,9 +1,8 @@
-var express = require('express');
-var router = express.Router();
+const registerApi = require("./registerApi");
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
-});
+// 挂在接口
+function mountApi(app) {
+  app.use(registerApi);
+}
 
-module.exports = router;
+module.exports = mountApi;
