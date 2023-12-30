@@ -1,10 +1,35 @@
 const express = require("express");
 const router = express.Router();
 const createError = require("http-errors");
+const mongoose = require("mongoose");
+const { crateToken } = require("../../middleware/validateToken");
 // 引入svg验证码包
 const svgCaptcha = require("svg-captcha");
-const UserModel = require("../database/model/UserModel");
+const UserModel = require("../../database/model/UserModel");
 
+// 登录接口
+router.post("/login", async function (req, res, next) {
+  const { userName, passWord } = req.body;
+  try {
+    const data = await UserModel.find({ userName, passWord }).exec();
+    if (data.length > 0) {
+      const { _id, userName, passWord } = data[0]._doc;
+
+      // 根据用户输入的数据生成token
+      const token = crateToken({ _id, userName, passWord });
+      res.send({
+        status: 200,
+        msg: "login success",
+        token,
+      });
+    }
+  } catch (error) {
+    console.log("/login", error);
+    next(createError(500));
+  }
+});
+
+// 注册接口
 router.post("/register", function (req, res, next) {
   const { userName, passWord, code } = req.body;
   // img_code 获取传递的图片验证码 ,如果不相等，验证码错误
@@ -43,6 +68,7 @@ router.post("/register", function (req, res, next) {
     });
 });
 
+// 获取二维码接口
 router.get("/getCode", (req, res) => {
   const captcha = svgCaptcha.create({
     noise: 3, // 干扰线条的数量
