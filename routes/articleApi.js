@@ -2,26 +2,30 @@ const express = require("express");
 const router = express.Router();
 const createError = require("http-errors");
 const { createToken } = require("../middleware/validateToken");
-const { searchFun } = require("../utils/index");
 const ArtileModel = require("../database/model/ArtileModel");
+const { sortPageLimitPipelineFunc } = require("../utils/index");
 
 // 获取文章
 
 router.get("/getArticle", async (req, res, next) => {
   let totalCount = 0;
   //   设置排序方式
+  //page:Number
+  //limit:Number
+  //sort:1正序 -1倒叙
   let { searchKey } = req.query;
-  let totalCountPipeLine = [];
 
   if (searchKey) {
-    totalCountPipeLine.push({
-      $match: {
-        $or: [
-          { title: { $regex: new RegExp(searchKey, "i") } }, // 忽略大小写
-          { content: { $regex: new RegExp(searchKey, "i") } },
-        ],
-      },
-    });
+    const docs = await ArtileModel.find({
+      $or: [
+        { title: { $regex: searchKey, $options: "i" } },
+        { content: { $regex: searchKey, $options: "i" } },
+      ],
+    }).exec();
+    totalCount = docs.length;
+  } else {
+    const docs = await ArtileModel.find().exec();
+    totalCount = docs.length;
   }
 
   const pipeline = (() => {
@@ -40,17 +44,29 @@ router.get("/getArticle", async (req, res, next) => {
         },
       });
     }
+
+    return pipeline;
   })();
 
-  searchFun(
-    req,
-    res,
-    next,
-    "/getArticle",
-    ArtileModel,
-    pipeline,
-    totalCountPipeLine
-  );
+  const { pageInfo, sortPageLimitPipeline } = sortPageLimitPipelineFunc(req);
+  try {
+    const docs = await ArtileModel.aggregate([
+      ...pipeline,
+      ...sortPageLimitPipeline,
+    ]).exec();
+    const count = docs.length;
+    res.send({
+      status: 200,
+      data: docs,
+      totalCount,
+      count,
+      pageInfo,
+      msg: "success",
+    });
+  } catch (error) {
+    console.log("/getArticle", error);
+    next(createError(500));
+  }
 });
 
 module.exports = router;

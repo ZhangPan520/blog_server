@@ -1,14 +1,5 @@
-const createError = require("http-errors");
-// 通用搜索逻辑
-async function searchFun(
-  req,
-  res,
-  next,
-  apiName,
-  Model,
-  pipeline = [],
-  totalCountPipeLine = []
-) {
+// 通用分页排序限制条数 pipeline
+function sortPageLimitPipelineFunc(req) {
   const {
     page = 0,
     limit = 0,
@@ -25,19 +16,12 @@ async function searchFun(
     return undefined;
   })();
 
-  if (totalCountPipeLine.length === 0) {
-    //创建一个没有任何影响的管道，主要是管道不能传入空值
-    totalCountPipeLine.push({ $match: { $expr: { $eq: [1, 1] } } });
-  }
-  const docs = await Model.aggregate([...totalCountPipeLine]).exec();
-  const totalCount = docs.length;
-
   //   通用分页排序逻辑
-  const defaultPipeline = (() => {
-    const pipeline = [];
+  const sortPageLimitPipeline = (() => {
+    const sortPageLimitPipeline = [];
     //    排序
     if (sortField) {
-      pipeline.push(
+      sortPageLimitPipeline.push(
         // 排序
         {
           $sort: {
@@ -47,7 +31,7 @@ async function searchFun(
       );
     }
     if (page) {
-      pipeline.push(
+      sortPageLimitPipeline.push(
         // 分页
         {
           $skip: (page - 1) * Number(~~limit),
@@ -56,32 +40,35 @@ async function searchFun(
     }
     if (~~limit) {
       //   限制返回条数;
-      pipeline.push({
+      sortPageLimitPipeline.push({
         $limit: parseInt(~~limit),
       });
     }
-    return pipeline;
+    return sortPageLimitPipeline;
   })();
-  try {
-    const docs = await Model.aggregate([
-      ...pipeline,
-      ...defaultPipeline,
-    ]).exec();
-    const count = docs.length;
-    res.send({
-      status: 200,
-      data: docs,
-      totalCount,
-      count,
-      pageInfo,
-      msg: "success",
-    });
-  } catch (error) {
-    console.log(apiName, error);
-    next(createError(500));
-  }
+  return { sortPageLimitPipeline, pageInfo };
 }
 
+// 将b数组中的数据，根据某个字段，和a数组中的字段进行匹配，并放入a数组中那个数据的chilren中
+function mergeArrays(a, b, afiled, bfield) {
+  // 构建以 comment_id 为键的映射表
+  const map = {};
+  for (const item of a) {
+    map[item[afiled]] = item;
+    item.children = []; // 初始化 children 属性
+  }
+
+  // 遍历数组 b，将符合条件的项添加到对应的 a 数组对象的 children 属性中
+  for (const item of b) {
+    const parentItem = map[item[bfield]];
+    if (parentItem) {
+      parentItem.children.push(item);
+    }
+  }
+
+  return Object.values(map);
+}
 module.exports = {
-  searchFun,
+  sortPageLimitPipelineFunc,
+  mergeArrays,
 };
