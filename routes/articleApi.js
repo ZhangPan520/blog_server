@@ -39,7 +39,7 @@ router.get("/getArticle", async (req, res, next) => {
     }).exec();
     totalCount = docs.length;
   } else {
-    const docs = await ArtileModel.find().exec().length;
+    const docs = await ArtileModel.find().exec();
     totalCount = docs.length;
   }
 

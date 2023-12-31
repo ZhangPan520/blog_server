@@ -25,6 +25,10 @@ const ArticleMSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    tags: {
+      type: Array,
+      default: [],
+    },
     view_count: Number,
     collect_count: Number,
   },
