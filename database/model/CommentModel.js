@@ -8,8 +8,6 @@ const CommentSchema = mongoose.Schema(
     },
     article_id: {
       type: String,
-      unique: true,
-      index: true,
       required: true,
     },
     user_id: {
