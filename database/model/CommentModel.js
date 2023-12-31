@@ -8,6 +8,14 @@ const CommentSchema = mongoose.Schema(
       index: true,
       default: () => new mongoose.Types.ObjectId().toString(), // 使用 default 属性
     },
+    comment_id: {
+      type: String,
+      unique: true,
+      index: true,
+      default: function () {
+        return this._id;
+      },
+    },
     createDate: {
       type: Number,
       default: () => new Date().getTime(),

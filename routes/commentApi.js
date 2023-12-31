@@ -3,7 +3,10 @@ const router = express.Router();
 const createError = require("http-errors");
 const { verifyToken, getTokenMsg } = require("../middleware/validateToken");
 const { sortPageLimitPipelineFunc, mergeArrays } = require("../utils/index");
+
+// Model
 const CommentModel = require("../database/model/CommentModel");
+const CommentLikeModel = require("../database/model/CommentLikeModel");
 
 // 通过ArticleId获取评论
 /**
@@ -163,6 +166,26 @@ router.delete("/deleteComment", verifyToken, async (req, res, next) => {
   } catch (error) {
     console.log("/deleteComment", error);
     next(createError(500));
+  }
+});
+
+// 评论点赞接口
+/**
+ * @params comment_id [String] required
+ * @params like [Number] [0,1]
+ * @params article_id [String] required
+ */
+
+router.post("/commentLike", verifyToken, (req, res, next) => {
+  const { like, comment_id, article_id } = req.body;
+  const { _id: user_id } = getTokenMsg(req.headers["authorization"]);
+  if (~~like) {
+    // 添加评论点赞数据
+    const addLike = new CommentLikeModel({
+      user_id,
+      article_id,
+      
+    })
   }
 });
 module.exports = router;

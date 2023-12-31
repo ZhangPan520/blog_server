@@ -8,6 +8,14 @@ const ArticleMSchema = mongoose.Schema(
       index: true,
       default: () => new mongoose.Types.ObjectId().toString(), // 使用 default 属性
     },
+    article_id: {
+      type: String,
+      unique: true,
+      index: true,
+      default: function () {
+        return this._id;
+      },
+    },
     title: {
       type: String,
       required: true,
