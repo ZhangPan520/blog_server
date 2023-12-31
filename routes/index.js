@@ -1,4 +1,4 @@
-const registerApi = require("./loginAndRegiseterApi");
+const registerApi = require("./loginRegisterGetCodeApi");
 
 // 挂在接口
 function mountApi(app) {

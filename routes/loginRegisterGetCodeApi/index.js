@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const createError = require("http-errors");
 const mongoose = require("mongoose");
-const { crateToken } = require("../../middleware/validateToken");
+const { createToken } = require("../../middleware/validateToken");
 // 引入svg验证码包
 const svgCaptcha = require("svg-captcha");
 const UserModel = require("../../database/model/UserModel");
@@ -16,7 +16,7 @@ router.post("/login", async function (req, res, next) {
       const { _id, userName, passWord } = data[0]._doc;
 
       // 根据用户输入的数据生成token
-      const token = crateToken({ _id, userName, passWord });
+      const token = createToken({ _id, userName, passWord });
       res.send({
         status: 200,
         msg: "login success",
@@ -31,6 +31,7 @@ router.post("/login", async function (req, res, next) {
 
 // 注册接口
 router.post("/register", function (req, res, next) {
+  console.log(123132);
   const { userName, passWord, code } = req.body;
   // img_code 获取传递的图片验证码 ,如果不相等，验证码错误
   if (String(code).toLocaleUpperCase() !== req.session.img_code) {
@@ -40,7 +41,6 @@ router.post("/register", function (req, res, next) {
     });
     return;
   }
-
   const addUser = new UserModel({
     userName,
     passWord,
@@ -49,9 +49,15 @@ router.post("/register", function (req, res, next) {
   addUser
     .save({ validateBeforeSave: true })
     .then((result) => {
+      // 清除img_code的验证码
+      try {
+        req.session.img_code = "";
+      } catch (err) {
+        console.log("req.session不存在", error);
+      }
       res.send({
         status: 200,
-        data: result,
+        token: createToken(result._doc),
         msg: "success",
       });
     })

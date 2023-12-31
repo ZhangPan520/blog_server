@@ -2,7 +2,7 @@ const jwtToken = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const secretKey = "jwttoken_secret";
 
-function crateToken(payload) {
+function createToken(payload) {
   return jwtToken.sign(payload, secretKey, { expiresIn: "0.5h" });
 }
 
@@ -31,6 +31,6 @@ function verifyToken(req, res, next) {
 }
 
 module.exports = {
-  crateToken,
+  createToken,
   verifyToken,
 };
