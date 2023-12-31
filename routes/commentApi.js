@@ -5,6 +5,15 @@ const { createToken } = require("../middleware/validateToken");
 const { sortPageLimitPipelineFunc, mergeArrays } = require("../utils/index");
 const CommentModel = require("../database/model/CommentModel");
 
+// 通过ArticleId获取评论
+/**
+ * @params article_id [String] required
+ * @params page [Number]
+ * @params limit Number
+ * @params sortField [String] ["like","createDate"] default:createDate
+ * @params sortMethod [Number] [1,-1]
+ */
+
 router.get("/getCommentByArticleId", async (req, res, next) => {
   const { article_id = 0 } = req.query;
   const { pageInfo, sortPageLimitPipeline } = sortPageLimitPipelineFunc(req);

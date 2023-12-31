@@ -7,6 +7,10 @@ const { createToken } = require("../../middleware/validateToken");
 const svgCaptcha = require("svg-captcha");
 const UserModel = require("../../database/model/UserModel");
 
+/**
+ * @params userName [String] required
+ * @params passWord [String] required
+ */
 // 登录接口
 router.post("/login", async function (req, res, next) {
   const { userName, passWord } = req.body;
@@ -30,6 +34,11 @@ router.post("/login", async function (req, res, next) {
 });
 
 // 注册接口
+/**
+ * @params userName [String] required
+ * @params passWord [String] required
+ * @params code [String] required
+ */
 router.post("/register", function (req, res, next) {
   console.log(123132);
   const { userName, passWord, code } = req.body;

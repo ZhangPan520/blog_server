@@ -7,6 +7,13 @@ const { sortPageLimitPipelineFunc } = require("../utils/index");
 
 // 获取文章
 
+/**
+ * @params page [Number]
+ * @params limit Number
+ * @params sortField [String] ["like","createDate"] default:createDate
+ * @params sortMethod [Number] [1,-1]
+ * @params searchKey [String]
+ */
 router.get("/getArticle", async (req, res, next) => {
   let totalCount = 0;
   //   设置排序方式
