@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const createError = require("http-errors");
-const { verifyToken } = require("../middleware/validateToken");
+const { verifyToken, getTokenMsg } = require("../middleware/validateToken");
 const { sortPageLimitPipelineFunc, mergeArrays } = require("../utils/index");
 const CommentModel = require("../database/model/CommentModel");
 
@@ -99,17 +99,16 @@ router.get("/getCommentByArticleId", async (req, res, next) => {
 // 新增评论
 /**
  * @params article_id [String] required
- * @params user_id [String] required
  * @params content [String] required
  * @params parent_id [String] default:"0"
  * @params to_user_id [String]
  */
 router.post("/addComment", verifyToken, async (req, res, next) => {
-  const { article_id, user_id, content, parent_id, to_user_id, like } =
-    req.body;
+  const { _id } = getTokenMsg(req.headers["authorization"]);
+  const { article_id, content, parent_id, to_user_id, like } = req.body;
   const addComment = new CommentModel({
     article_id,
-    user_id,
+    user_id: _id,
     content,
     parent_id,
     to_user_id,
@@ -127,4 +126,43 @@ router.post("/addComment", verifyToken, async (req, res, next) => {
   }
 });
 
+/**
+ * @params comment_id [String] required
+ */
+//删除评论
+router.delete("/deleteComment", verifyToken, async (req, res, next) => {
+  const { _id: user_id } = getTokenMsg(req.headers["authorization"]);
+  const { comment_id } = req.body;
+  try {
+    const currentComment = await CommentModel.aggregate([
+      {
+        $match: {
+          _id: comment_id,
+        },
+      },
+    ]).exec();
+    if (currentComment.length === 0) {
+      res.send({
+        status: "201",
+        msg: `暂无该评论的信息，或者该评论已被删除评论_id为 ${comment_id}`,
+      });
+      return;
+    }
+    if (user_id === currentComment[0].user_id) {
+      const result = await CommentModel.deleteOne({ _id: comment_id });
+      res.send({
+        status: "200",
+        msg: "删除成功",
+      });
+    } else {
+      res.send({
+        status: 201,
+        msg: "该用户并不拥有该条评论，所以不能删除哦",
+      });
+    }
+  } catch (error) {
+    console.log("/deleteComment", error);
+    next(createError(500));
+  }
+});
 module.exports = router;

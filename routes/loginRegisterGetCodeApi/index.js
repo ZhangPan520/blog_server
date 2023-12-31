@@ -82,7 +82,7 @@ router.post("/register", function (req, res, next) {
         });
         return;
       }
-      console.log("/register", "error");
+      console.log("/register", error);
       next(createError(500));
     });
 });

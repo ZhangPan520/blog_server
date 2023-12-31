@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const role = require("../../utils/role");
 
 const UserSchema = mongoose.Schema(
   {
@@ -24,7 +25,11 @@ const UserSchema = mongoose.Schema(
     },
     createDate: {
       type: Number,
-      default: () => new Date().getTime,
+      default: () => new Date().getTime(),
+    },
+    role: {
+      type: String,
+      default: role.user,
     },
   },
   { versionKey: false }

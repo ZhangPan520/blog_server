@@ -6,6 +6,10 @@ function createToken(payload) {
   return jwtToken.sign(payload, secretKey, { expiresIn: "0.5h" });
 }
 
+function getTokenMsg(token) {
+  return jwtToken.verify(token, secretKey);
+}
+
 function verifyToken(req, res, next) {
   // 当我写了callBack 和token参数后 路由校验时就不会进这个函数了，应该是去校验了函数的参数长度所以用arguments来接受参数
   //arguments[4] 请传入token，arguments[3] 请传入回调函数  这两个参数基本上用不到，为了扩展写的
@@ -33,4 +37,5 @@ function verifyToken(req, res, next) {
 module.exports = {
   createToken,
   verifyToken,
+  getTokenMsg,
 };
