@@ -7,7 +7,7 @@ const ArtileModel = require("../database/model/ArtileModel");
 // 获取文章
 
 router.get("/getArticle", async (req, res, next) => {
-  const { length: totalCount = 0 } = await ArtileModel.find().exec();
+  let totalCount = 0;
   //   设置排序方式
   //page:Number
   //limit:Number
@@ -17,6 +17,7 @@ router.get("/getArticle", async (req, res, next) => {
     limit = 0,
     sortFiled = "createDate",
     sortMethod = 1,
+    searchKey,
   } = req.query;
 
   const pageInfo = (() => {
@@ -29,15 +30,45 @@ router.get("/getArticle", async (req, res, next) => {
     return undefined;
   })();
 
+  if (searchKey) {
+    const docs = await ArtileModel.find({
+      $or: [
+        { title: { $regex: searchKey, $options: "i" } },
+        { content: { $regex: searchKey, $options: "i" } },
+      ],
+    }).exec();
+    totalCount = docs.length;
+  } else {
+    const docs = await ArtileModel.find().exec().length;
+    totalCount = docs.length;
+  }
+
   const pipeline = (() => {
-    let pipeline = [
+    // 根据关键词模糊查询
+    let pipeline = [];
+    // 根据关键词进行查询
+
+    if (searchKey) {
+      // 查询title和content中满足条件的内容
+      pipeline.push({
+        $match: {
+          $or: [
+            { title: { $regex: new RegExp(searchKey, "i") } }, // 忽略大小写
+            { content: { $regex: new RegExp(searchKey, "i") } },
+          ],
+        },
+      });
+    }
+
+    pipeline.push(
       // 排序
       {
         $sort: {
           [sortFiled]: Number(-~~sortMethod), // 正序排序，-1 为倒序排序
         },
-      },
-    ];
+      }
+    );
+
     if (page) {
       pipeline.push(
         // 分页
