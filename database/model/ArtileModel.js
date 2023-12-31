@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const ArticleMSchema = mongoose.Schema(
   {
+    _id: {
+      type: String,
+      unique: true,
+      index: true,
+      default: () => new mongoose.Types.ObjectId().toString(), // 使用 default 属性
+    },
     title: {
       type: String,
       required: true,

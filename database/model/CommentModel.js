@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const CommentSchema = mongoose.Schema(
   {
+    _id: {
+      type: String,
+      unique: true,
+      index: true,
+      default: () => new mongoose.Types.ObjectId().toString(), // 使用 default 属性
+    },
     createDate: {
       type: Number,
       required: true,
@@ -15,23 +21,20 @@ const CommentSchema = mongoose.Schema(
       required: true,
     },
     parent_id: {
-      type: Number,
+      type: String,
       required: true,
-      default: 0,
+      default: "0",
     },
     conntent: {
       type: String,
       required: true,
     },
-    from: {
-      type: String,
-      require: true,
-    },
-    to: {
+    to_user_id: {
       type: String,
     },
     like: {
       type: Number,
+      default: 0,
     },
   },
   { versionKey: false }

@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const UserSchema = mongoose.Schema(
   {
+    _id: {
+      type: String,
+      unique: true,
+      index: true,
+      default: () => new mongoose.Types.ObjectId().toString(), // 使用 default 属性
+    },
     userName: {
       type: String,
       required: true,
@@ -12,10 +18,14 @@ const UserSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    avator: {
+      type: String,
+      default: () => "",
+    },
   },
   { versionKey: false }
 );
 
-const UserModel = mongoose.model("User", UserSchema, "user");
+const UserModel = mongoose.model("users", UserSchema);
 
 module.exports = UserModel;

@@ -21,16 +21,55 @@ router.get("/getCommentByArticleId", async (req, res, next) => {
   // 查询数据
   try {
     // 查询对应article_id的所有数据
-    console.log(article_id);
-    const docs = await CommentModel.aggregate([
-      { $match: { article_id } },
-      ...sortPageLimitPipeline,
-    ]).exec();
-
     const totalDocs = await CommentModel.aggregate([
       { $match: { article_id, parent_id: "0" } },
     ]).exec();
+
     const totalCount = totalDocs.length;
+    const docs = await CommentModel.aggregate([
+      { $match: { article_id } },
+      {
+        $addFields: {
+          convertedId: { $toObjectId: "$localField" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users", // b表的名称
+          localField: "user_id", // a表中的字段
+          foreignField: "_id", // b表中的字段
+          as: "userInfo", // 关联后存放结果的字段名
+        },
+      },
+      {
+        $lookup: {
+          from: "users", // b表的名称
+          localField: "to_user_id", // a表中的字段
+          foreignField: "_id", // b表中的字段
+          as: "toUserInfo", // 关联后存放结果的字段名
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          createDate: 1,
+          parent_id: 1,
+          to_user_id: 1,
+          like: 1,
+          userInfo: {
+            _id: 1,
+            userName: 1,
+            avator: 1,
+          },
+          toUserInfo: {
+            _id: 1,
+            userName: 1,
+            avator: 1,
+          },
+        },
+      },
+      ...sortPageLimitPipeline,
+    ]).exec();
 
     // 一级评论
     const firstComments = docs.filter((comment) => comment.parent_id === "0");
@@ -42,7 +81,6 @@ router.get("/getCommentByArticleId", async (req, res, next) => {
 
     // 将二级评论合并到一级评论的子级中
     const data = mergeArrays(firstComments, secondComments, "_id", "parent_id");
-    console.log(data);
     res.send({
       status: 200,
       data: data,
@@ -56,5 +94,12 @@ router.get("/getCommentByArticleId", async (req, res, next) => {
     next(createError(500));
   }
 });
+
+// 新增评论
+/**
+ * @params article_id [String] required
+ * @params parent_id [String] default:"0"
+ */
+router.post("/addComment", (req, res, next) => {});
 
 module.exports = router;
