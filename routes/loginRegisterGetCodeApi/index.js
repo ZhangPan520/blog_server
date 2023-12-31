@@ -26,6 +26,11 @@ router.post("/login", async function (req, res, next) {
         msg: "login success",
         token,
       });
+    } else {
+      res.send({
+        status: 201,
+        msg: "账号密码错误",
+      });
     }
   } catch (error) {
     console.log("/login", error);
@@ -40,7 +45,6 @@ router.post("/login", async function (req, res, next) {
  * @params code [String] required
  */
 router.post("/register", function (req, res, next) {
-  console.log(123132);
   const { userName, passWord, code } = req.body;
   // img_code 获取传递的图片验证码 ,如果不相等，验证码错误
   if (String(code).toLocaleUpperCase() !== req.session.img_code) {

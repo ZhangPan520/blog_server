@@ -14,7 +14,7 @@ const ArticleMSchema = mongoose.Schema(
     },
     createDate: {
       type: Number,
-      required: true,
+      default: () => new Date().getTime(),
     },
     article_id: {
       type: String,

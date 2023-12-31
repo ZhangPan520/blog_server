@@ -22,6 +22,10 @@ const UserSchema = mongoose.Schema(
       type: String,
       default: () => "",
     },
+    createDate: {
+      type: Number,
+      default: () => new Date().getTime,
+    },
   },
   { versionKey: false }
 );

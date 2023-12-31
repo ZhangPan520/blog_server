@@ -10,7 +10,7 @@ const CommentSchema = mongoose.Schema(
     },
     createDate: {
       type: Number,
-      required: true,
+      default: () => new Date().getTime(),
     },
     article_id: {
       type: String,
@@ -25,12 +25,13 @@ const CommentSchema = mongoose.Schema(
       required: true,
       default: "0",
     },
-    conntent: {
+    content: {
       type: String,
       required: true,
     },
     to_user_id: {
       type: String,
+      default: "",
     },
     like: {
       type: Number,

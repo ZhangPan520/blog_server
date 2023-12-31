@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const createError = require("http-errors");
-const { createToken } = require("../middleware/validateToken");
+const { verifyToken } = require("../middleware/validateToken");
 const { sortPageLimitPipelineFunc, mergeArrays } = require("../utils/index");
 const CommentModel = require("../database/model/CommentModel");
 
@@ -55,6 +55,7 @@ router.get("/getCommentByArticleId", async (req, res, next) => {
           createDate: 1,
           parent_id: 1,
           to_user_id: 1,
+          content: 1,
           like: 1,
           userInfo: {
             _id: 1,
@@ -98,8 +99,32 @@ router.get("/getCommentByArticleId", async (req, res, next) => {
 // 新增评论
 /**
  * @params article_id [String] required
+ * @params user_id [String] required
+ * @params content [String] required
  * @params parent_id [String] default:"0"
+ * @params to_user_id [String]
  */
-router.post("/addComment", (req, res, next) => {});
+router.post("/addComment", verifyToken, async (req, res, next) => {
+  const { article_id, user_id, content, parent_id, to_user_id, like } =
+    req.body;
+  const addComment = new CommentModel({
+    article_id,
+    user_id,
+    content,
+    parent_id,
+    to_user_id,
+    like,
+  });
+  try {
+    await addComment.save();
+    res.send({
+      status: 200,
+      msg: "success",
+    });
+  } catch (error) {
+    console.log("/addComment", error);
+    next(createError(500));
+  }
+});
 
 module.exports = router;
