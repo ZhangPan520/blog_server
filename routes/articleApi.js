@@ -81,9 +81,10 @@ router.get("/getArticle", async (req, res, next) => {
 
 /**
  * @params title [String] required
- * @params conntent [String] required
+ * @params content [String] required
  * @params user_id [String] required
- * @params tags [String[]]
+ * @params tags String
+ * des:多个tag请用,隔开 如:"vue,js,ajax"
  */
 // 新增文章
 router.post("/addArticle", verifyToken, async (req, res, next) => {
@@ -109,9 +110,94 @@ router.post("/addArticle", verifyToken, async (req, res, next) => {
 });
 
 /**
- *@params
+ * @params article_id [String] required
+ * @params title [String]
+ * @params content [String]
+ * @params tags [String[]]
+ * des:多个tag请用,隔开 如:"vue,js,ajax"
  */
 // 编辑文章
-router.put("/updateArticle", (req, res, next) => {});
+router.put("/updateArticle", async (req, res, next) => {
+  const { title, content, tags, article_id } = req.body;
+  const tagsHandle = tags && tags.split(",");
+  try {
+    await ArticleModel.updateOne(
+      { article_id },
+      { title, content, tags: tagsHandle }
+    );
+    res.send({
+      status: 200,
+      msg: `更新article_id为${article_id}的文章成功`,
+    });
+  } catch (error) {
+    errorFunc(res, "/updateArticle", error);
+  }
+});
+
+/**
+ * @params article_id [String]
+ * des:删除文章
+ */
+router.delete("/deleteArticle", verifyToken, async (req, res, next) => {
+  const { article_id } = req.body;
+  console.log(article_id);
+  const { user_id } = getTokenMsg(req.headers["authorization"]);
+  console.log(user_id);
+  try {
+    const deleteMsg = await ArticleModel.deleteOne({
+      article_id,
+      user_id,
+    });
+    console.log(deleteMsg);
+    // if()
+    if (deleteMsg.deletedCount) {
+      res.send({
+        status: 200,
+        msg: "success",
+      });
+    } else {
+      errorFunc(res, "/deleteArticle", {
+        message:
+          "失败原因:1.请检查article_id和user_id是否已传。2.用户没有删除文章的权限。3.该文章已经被删除",
+      });
+    }
+  } catch (error) {
+    errorFunc(res, "/deleteArticle", error);
+  }
+});
+
+/**
+ * des:获取所有文章的tag标签
+ */
+router.get("/getAllArticleTags", async (req, res, next) => {
+  try {
+    const docs = await ArticleModel.aggregate([
+      // 将标签数组展开为单独的文档
+      { $unwind: "$tags" },
+      // 统计每个标签的数量
+      {
+        $group: {
+          _id: "$tags",
+          count: { $sum: 1 },
+        },
+      },
+      // 将结果重构为对象数组
+      {
+        $project: {
+          _id: 0,
+          tag: "$_id",
+          count: 1,
+        },
+      },
+    ]);
+    res.send({
+      status: 200,
+      data: docs,
+      msg: "success",
+    });
+  } catch (error) {
+    errorFunc(res, "/getAllTags", error);
+  }
+});
 
 module.exports = router;
