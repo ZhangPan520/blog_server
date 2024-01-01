@@ -1,8 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const createError = require("http-errors");
-const { createToken } = require("../middleware/validateToken");
-const ArtileModel = require("../database/model/ArtileModel");
+const { errorFunc } = require("../utils/index");
+const {
+  createToken,
+  verifyToken,
+  getTokenMsg,
+} = require("../middleware/validateToken");
+const ArticleModel = require("../database/model/ArticleModel");
 const { sortPageLimitPipelineFunc } = require("../utils/index");
 
 // 获取文章
@@ -57,7 +62,7 @@ router.get("/getArticle", async (req, res, next) => {
 
   const { pageInfo, sortPageLimitPipeline } = sortPageLimitPipelineFunc(req);
   try {
-    const docs = await ArtileModel.aggregate([
+    const docs = await ArticleModel.aggregate([
       ...pipeline,
       ...sortPageLimitPipeline,
     ]).exec();
@@ -75,5 +80,40 @@ router.get("/getArticle", async (req, res, next) => {
     next(createError(500));
   }
 });
+
+/**
+ * @params title [String] required
+ * @params conntent [String] required
+ * @params user_id [String] required
+ * @params tags [String[]]
+ */
+// 新增文章
+router.post("/addArticle", verifyToken, async (req, res, next) => {
+  const { title, content, tags } = req.body;
+  const tagsHandle = tags.split(",");
+  const { user_id } = getTokenMsg(req.headers["authorization"]);
+  const addArticle = new ArticleModel({
+    title,
+    content,
+    tags: tagsHandle,
+    user_id,
+  });
+  try {
+    const resData = await addArticle.save();
+    res.send({
+      status: 200,
+      data: resData._doc,
+      msg: "success",
+    });
+  } catch (error) {
+    errorFunc(res, "/addArticle", error);
+  }
+});
+
+/**
+ *@params
+ */
+// 编辑文章
+router.put("/updateArticle", (req, res, next) => {});
 
 module.exports = router;
