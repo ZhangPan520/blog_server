@@ -18,6 +18,8 @@ const { sortPageLimitPipelineFunc } = require("../utils/index");
  * @params sortField [String] ["like","createDate"] default:createDate
  * @params sortMethod [Number] [1,-1]
  * @params searchKey [String]
+ * @params tagKey [String]
+ * des:描述 此接口中如果传入tagKey和searchKey那么tagKey和searchKey是与的关系，同时tagKey优先级高于searchKey
  */
 router.get("/getArticle", async (req, res, next) => {
   let totalCount = 0;
@@ -25,45 +27,41 @@ router.get("/getArticle", async (req, res, next) => {
   //page:Number
   //limit:Number
   //sort:1正序 -1倒叙
-  let { searchKey } = req.query;
+  let { searchKey, tagKey } = req.query;
+
+  const searchLine = [{ $match: {} }];
+  const tagLine = [{ $match: {} }];
 
   if (searchKey) {
-    const docs = await ArtileModel.find({
-      $or: [
-        { title: { $regex: searchKey, $options: "i" } },
-        { content: { $regex: searchKey, $options: "i" } },
-      ],
-    }).exec();
-    totalCount = docs.length;
-  } else {
-    const docs = await ArtileModel.find().exec();
-    totalCount = docs.length;
+    searchLine.push({
+      $match: {
+        $or: [
+          { title: { $regex: searchKey, $options: "i" } },
+          { content: { $regex: searchKey, $options: "i" } },
+        ],
+      },
+    });
   }
 
-  const pipeline = (() => {
-    // 根据关键词模糊查询
-    let pipeline = [];
-    // 根据关键词进行查询
-
-    if (searchKey) {
-      // 查询title和content中满足条件的内容
-      pipeline.push({
-        $match: {
-          $or: [
-            { title: { $regex: new RegExp(searchKey, "i") } }, // 忽略大小写
-            { content: { $regex: new RegExp(searchKey, "i") } },
-          ],
+  if (tagKey) {
+    tagLine.push({
+      $match: {
+        tags: {
+          $regex: tagKey,
+          $options: "i",
         },
-      });
-    }
+      },
+    });
+  }
 
-    return pipeline;
-  })();
+  const docs = await ArticleModel.aggregate([...tagLine, ...searchLine]).exec();
+  totalCount = docs.length;
 
   const { pageInfo, sortPageLimitPipeline } = sortPageLimitPipelineFunc(req);
   try {
     const docs = await ArticleModel.aggregate([
-      ...pipeline,
+      ...tagLine,
+      ...searchLine,
       ...sortPageLimitPipeline,
     ]).exec();
     const count = docs.length;
