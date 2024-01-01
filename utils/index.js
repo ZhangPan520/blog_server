@@ -1,3 +1,5 @@
+const createError = require("http-errors");
+
 // 通用分页排序限制条数 pipeline
 function sortPageLimitPipelineFunc(req) {
   const {
@@ -68,7 +70,25 @@ function mergeArrays(a, b, afiled, bfield) {
 
   return Object.values(map);
 }
+
+/**
+ * des:错误处理函数
+ * @params res
+ * @params apiName
+ * @params error
+ * @params code
+ */
+function errorFunc(res, apiName, error, code = 201) {
+  if (code === 201) {
+    console.log(apiName, error);
+    res.send({
+      status: 201,
+      msg: error.message,
+    });
+  }
+}
 module.exports = {
   sortPageLimitPipelineFunc,
   mergeArrays,
+  errorFunc,
 };

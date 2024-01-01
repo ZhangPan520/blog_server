@@ -17,10 +17,8 @@ router.post("/login", async function (req, res, next) {
   try {
     const data = await UserModel.find({ userName, passWord }).exec();
     if (data.length > 0) {
-      const { _id, userName, passWord } = data[0]._doc;
-
       // 根据用户输入的数据生成token
-      const token = createToken({ _id, userName, passWord });
+      const token = createToken(data[0]._doc);
       res.send({
         status: 200,
         msg: "login success",

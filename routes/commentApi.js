@@ -3,6 +3,7 @@ const router = express.Router();
 const createError = require("http-errors");
 const { verifyToken, getTokenMsg } = require("../middleware/validateToken");
 const { sortPageLimitPipelineFunc, mergeArrays } = require("../utils/index");
+const { errorFunc } = require("../utils/index");
 
 // Model
 const CommentModel = require("../database/model/CommentModel");
@@ -20,6 +21,13 @@ const CommentLikeModel = require("../database/model/CommentLikeModel");
 router.get("/getCommentByArticleId", async (req, res, next) => {
   const { article_id = 0 } = req.query;
   const { pageInfo, sortPageLimitPipeline } = sortPageLimitPipelineFunc(req);
+  console.log(123);
+  let user_id = 0;
+  if (req.headers["authorization"]) {
+    user_id = getTokenMsg(req.headers["authorization"]);
+  }
+
+  console.log(user_id);
 
   // 查询数据
   try {
@@ -53,13 +61,30 @@ router.get("/getCommentByArticleId", async (req, res, next) => {
         },
       },
       {
+        $lookup: {
+          from: "comment_likes",
+          localField: "comment_id",
+          foreignField: "comment_id",
+          as: "likes",
+        },
+      },
+      {
+        $addFields: {
+          likes_count: { $size: "$likes" },
+          current_user_like_status: {
+            $cond: [{ $in: [user_id, "$likes.user_id"] }, true, false],
+          },
+        },
+      },
+      {
         $project: {
           _id: 1,
           createDate: 1,
           parent_id: 1,
           to_user_id: 1,
           content: 1,
-          like: 1,
+          likes_count: 1,
+          current_user_like_status: 1,
           userInfo: {
             _id: 1,
             userName: 1,
@@ -176,16 +201,41 @@ router.delete("/deleteComment", verifyToken, async (req, res, next) => {
  * @params article_id [String] required
  */
 
-router.post("/commentLike", verifyToken, (req, res, next) => {
+router.post("/commentLike", verifyToken, async (req, res, next) => {
   const { like, comment_id, article_id } = req.body;
-  const { _id: user_id } = getTokenMsg(req.headers["authorization"]);
+  const { user_id } = getTokenMsg(req.headers["authorization"]);
   if (~~like) {
+    const isLike = await CommentLikeModel.aggregate([
+      {
+        $match: {
+          user_id,
+          comment_id,
+        },
+      },
+    ]);
+    if (isLike.length) {
+      res.send({
+        status: 201,
+        msg: "你已经点赞了",
+      });
+      return;
+    }
+
     // 添加评论点赞数据
     const addLike = new CommentLikeModel({
       user_id,
       article_id,
-      
-    })
+      comment_id,
+    });
+    try {
+      await addLike.save();
+      res.send({
+        status: 200,
+        msg: "点赞成功",
+      });
+    } catch (error) {
+      errorFunc(res, "/commentLike", error);
+    }
   }
 });
 module.exports = router;
